@@ -63,6 +63,7 @@ public abstract class CameraActivity extends AppCompatActivity
   private static final int PERMISSIONS_REQUEST = 1;
 
   private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
+  private static final String PERMISSION_WRITE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
   protected int previewWidth = 0;
   protected int previewHeight = 0;
   private boolean debug = false;
@@ -96,6 +97,10 @@ public abstract class CameraActivity extends AppCompatActivity
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
     getSupportActionBar().setDisplayShowTitleEnabled(false);
+
+    if (!hasPermissionWrite()) {
+      requestPermissionWrite();
+    }
 
     if (hasPermission()) {
       setFragment();
@@ -311,14 +316,7 @@ public abstract class CameraActivity extends AppCompatActivity
   public synchronized void onPause() {
     LOGGER.d("onPause " + this);
 
-    handlerThread.quitSafely();
-    try {
-      handlerThread.join();
-      handlerThread = null;
-      handler = null;
-    } catch (final InterruptedException e) {
-      LOGGER.e(e, "Exception!");
-    }
+
 
     super.onPause();
   }
@@ -332,6 +330,15 @@ public abstract class CameraActivity extends AppCompatActivity
   @Override
   public synchronized void onDestroy() {
     LOGGER.d("onDestroy " + this);
+
+    handlerThread.quitSafely();
+    try {
+      handlerThread.join();
+      handlerThread = null;
+      handler = null;
+    } catch (final InterruptedException e) {
+      LOGGER.e(e, "Exception!");
+    }
     super.onDestroy();
   }
 
@@ -371,6 +378,14 @@ public abstract class CameraActivity extends AppCompatActivity
     }
   }
 
+  private boolean hasPermissionWrite() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      return checkSelfPermission(PERMISSION_WRITE) == PackageManager.PERMISSION_GRANTED;
+    } else {
+      return true;
+    }
+  }
+
   private void requestPermission() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
@@ -381,6 +396,19 @@ public abstract class CameraActivity extends AppCompatActivity
             .show();
       }
       requestPermissions(new String[] {PERMISSION_CAMERA}, PERMISSIONS_REQUEST);
+    }
+  }
+
+  private void requestPermissionWrite() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      if (shouldShowRequestPermissionRationale(PERMISSION_WRITE)) {
+        Toast.makeText(
+                        CameraActivity.this,
+                        "Camera permission is required for this demo",
+                        Toast.LENGTH_LONG)
+                .show();
+      }
+      requestPermissions(new String[] {PERMISSION_WRITE}, PERMISSIONS_REQUEST);
     }
   }
 
